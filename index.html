@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>미니멀 노션 스타일 태스크 리스트</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f7f7f7;
+      color: #222;
+    }
+    
+    .container {
+      width: 90%;
+      max-width: 500px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      padding: 2rem;
+    }
+    
+    .title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+    
+    .task-list-container {
+      position: relative;
+      height: 300px;
+      overflow: hidden;
+    }
+    
+    .task-list {
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: #ddd transparent;
+    }
+    
+    .task-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .task-list::-webkit-scrollbar-thumb {
+      background-color: #ddd;
+      border-radius: 4px;
+    }
+    
+    .task-list::-webkit-scrollbar-track {
+      background-color: transparent;
+    }
+    
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .task-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      margin-right: 12px;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+    
+    .task-checkbox:checked {
+      background-color: #2eaadc;
+      border-color: #2eaadc;
+    }
+    
+    .task-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 2px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    
+    .task-label {
+      line-height: 1.5;
+      font-size: 0.95rem;
+      flex-grow: 1;
+      color: #444;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    
+    .task-item.completed .task-label {
+      color: #999;
+      text-decoration: line-through;
+    }
+    
+    .mask-bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 50px;
+      pointer-events: none;
+      z-index: 10;
+      bottom: 0;
+      background: linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+    }
+    
+    .task-input-container {
+      display: flex;
+      align-items: center;
+      margin-top: 1rem;
+      border-top: 1px solid #f0f0f0;
+      padding-top: 1rem;
+    }
+    
+    .task-input {
+      width: 100%;
+      padding: 8px 0;
+      border: none;
+      background: transparent;
+      font-size: 0.95rem;
+      color: #444;
+      outline: none;
+    }
+    
+    .task-input::placeholder {
+      color: #bbb;
+    }
+    
+    .plus-icon {
+      margin-right: 10px;
+      opacity: 0.3;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">태스크 리스트</h1>
+    
+    <div class="task-list-container">
+      <div class="task-list" id="taskList">
+        <!-- 태스크 아이템들 -->
+      </div>
+      <div class="mask-bottom"></div>
+    </div>
+    
+    <div class="task-input-container">
+      <span class="plus-icon">+</span>
+      <input type="text" class="task-input" placeholder="새로운 태스크 추가..." id="taskInput">
+    </div>
+  </div>
+
+  <script>
+    // 샘플 태스크 데이터
+    const tasks = [
+      { id: 1, text: '월간 보고서 작성하기', completed: false },
+      { id: 2, text: '팀 미팅 준비자료 만들기', completed: true },
+      { id: 3, text: '클라이언트 이메일 회신하기', completed: false },
+      { id: 4, text: '프로젝트 일정 업데이트하기', completed: false },
+      { id: 5, text: '주간 작업 요약 제출하기', completed: true },
+      { id: 6, text: '디자인 리뷰 피드백 반영하기', completed: false },
+      { id: 7, text: '신규 팀원 온보딩 자료 준비하기', completed: false },
+      { id: 8, text: '분기별 목표 설정하기', completed: false },
+      { id: 9, text: '리서치 자료 정리하기', completed: false },
+      { id: 10, text: '사용자 인터뷰 일정 조율하기', completed: true },
+      { id: 11, text: '제품 출시 전략 검토하기', completed: false },
+      { id: 12, text: '마케팅 캠페인 기획하기', completed: false },
+      { id: 13, text: '분석 대시보드 업데이트하기', completed: true },
+      { id: 14, text: '코드 리뷰 완료하기', completed: false },
+      { id: 15, text: '성과 평가 준비하기', completed: false }
+    ];
+
+    const taskList = document.getElementById('taskList');
+    const taskInput = document.getElementById('taskInput');
+    
+    // 태스크 렌더링 함수
+    function renderTasks() {
+      taskList.innerHTML = '';
+      
+      tasks.forEach(task => {
+        const taskItem = document.createElement('div');
+        taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
+        taskItem.dataset.id = task.id;
+        
+        taskItem.innerHTML = `
+          <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+          <span class="task-label">${task.text}</span>
+        `;
+        
+        taskList.appendChild(taskItem);
+      });
+      
+      setupEventListeners();
+    }
+    
+    // 이벤트 리스너 설정
+    function setupEventListeners() {
+      // 체크박스 이벤트
+      document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const taskItem = this.closest('.task-item');
+          const taskId = parseInt(taskItem.dataset.id);
+          
+          // 태스크 상태 업데이트
+          const task = tasks.find(t => t.id === taskId);
+          if (task) {
+            task.completed = this.checked;
+            taskItem.classList.toggle('completed', this.checked);
+          }
+        });
+      });
+    }
+    
+    // 새 태스크 추가 기능
+    taskInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && this.value.trim() !== '') {
+        const newTask = {
+          id: tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1,
+          text: this.value.trim(),
+          completed: false
+        };
+        
+        tasks.unshift(newTask);
+        renderTasks();
+        this.value = '';
+      }
+    });
+    
+    // 초기 태스크 렌더링
+    renderTasks();
+  </script>
+</body>
+</html>
